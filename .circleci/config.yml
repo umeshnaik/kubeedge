@@ -41,4 +41,4 @@ workflows:
     - verify
     - build
     - test
-- integration
+    - integration
