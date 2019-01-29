@@ -3,11 +3,11 @@ version: 2
 # Docker environment.
 defaults: &defaults
   fork_directory: /go/src/github.com/kubeedge/kubeedge
+  original_directory: /home/src/github.com/kubeedge
   steps:
   - run:
       command: 
         mkdir -p /home/src/github.com/kubeedge/kubeedge
-        original_directory: /home/src/github.com/kubeedge
         cd ${original_directory}
         git clone https://github.com/kubeedge/kubeedge.git
         cd ~
