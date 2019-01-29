@@ -1,6 +1,8 @@
 version: 2
+
 # Docker environment.
 defaults: &defaults
+  working_directory: /go/src/github.com/kubeedge/kubeedge
   docker:
   - image: circleci/golang:1.11.1
 
@@ -39,4 +41,4 @@ workflows:
     - verify
     - build
     - test
-    - integration
+- integration
