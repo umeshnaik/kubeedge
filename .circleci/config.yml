@@ -2,18 +2,6 @@ version: 2
 
 # Docker environment.
 defaults: &defaults
-  environment: 
-    fork_directory: /go/src/github.com/kubeedge/kubeedge
-    original_directory: /fork/src/github.com/kubeedge
-  steps:
-  - run:
-      command: 
-        mkdir -p /fork/src/github.com/kubeedge/kubeedge
-        cd ${original_directory}
-        git clone https://github.com/kubeedge/kubeedge.git
-        cd ~
-        rsync -az ${original_directory} ${fork_directory}
-      
   docker:
   - image: circleci/golang:1.11.1
 
