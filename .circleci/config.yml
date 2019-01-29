@@ -1,5 +1,4 @@
 version: 2
-
 # Docker environment.
 defaults: &defaults
   docker:
