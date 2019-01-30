@@ -15,13 +15,14 @@
 # limitations under the License.
 
 # get gometalinter(https://github.com/alecthomas/gometalinter)
+sudo chown circleci:circleci /go/bin
 echo $GOPATH
 curl -L https://git.io/vp6lP | sh
 echo $GOPATH
 go get github.com/alecthomas/gometalinter
 which gometalinter
-sudo chown circleci:circleci /go/bin
-curl -L https://git.io/vp6lP | sh
+
+#curl -L https://git.io/vp6lP | sh
 #export PATH=${PATH}:${GOPATH}/src/github.com/kubeedge/kubeedge/bin
 
 gometalinter --disable-all --enable=gofmt --enable=misspell --enable=golint --exclude=vendor --exclude=test ./...
