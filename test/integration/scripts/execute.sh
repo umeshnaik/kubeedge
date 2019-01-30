@@ -41,7 +41,8 @@ fi
 
 PWD=${curpath}/test/integration
 sudo rm -rf $PWD/modules/edgecore/$modulename/$modulename.test
-sudo apt-get install -y golang-ginkgo-dev
+#sudo apt-get install -y golang-ginkgo-dev
+go get github.com/onsi/ginkgo/ginkgo
 # Specify the module name to compile in below command
 ginkgo build -r $PWD/modules/edgecore/$modulename
 export MQTT_SERVER=127.0.0.1

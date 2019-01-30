@@ -1,0 +1,30 @@
+language: go
+
+sudo: required
+
+services:
+  - docker
+
+go:
+  - 1.11
+
+#before_install:
+#  - apt-get install make	
+before_script:
+  - mkdir -p $HOME/gopath/src/github.com/kubeedge/kubeedge
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/kubeedge/kubeedge/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/kubeedge/kubeedge
+  - cd $HOME/gopath/src/github.com/kubeedge/kubeedge
+  
+install: true
+
+jobs:
+  include:
+    - stage: test
+      script: make test
+    - stage: build
+      script: make 
+    - stage: verify
+      script: make verify
+    - stage: integration
+      script: make integration_test
