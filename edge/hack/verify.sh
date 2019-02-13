@@ -19,7 +19,7 @@
 curl -L https://git.io/vp6lP | sh
 export PATH=${PATH}:${GOPATH}/bin:${GOPATH}/src/github.com/kubeedge/kubeedge/edge/bin
 
-gometalinter --disable-all --enable=gofmt --enable=misspell --enable=golint --exclude=vendor --exclude=test ./...
+gometalinter --disable-all --enable=gocyclo --enable=gofmt --enable=misspell --enable=golint --exclude=vendor --exclude=test ./...
 if [ $? != 0 ]; then
         echo "Please fix the warnings!"
 	echo "Run hack/update-gofmt.sh if any warnings in gofmt"
