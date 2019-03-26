@@ -18,6 +18,7 @@ package device_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -100,16 +101,16 @@ var _ = Describe("Event Bus Testing", func() {
 	var Client MQTT.Client
 	Context("Publish on eventbus topics throgh MQTT internal broker", func() {
 		BeforeEach(func() {
-			ClientOpts = HubClientInit(ctx.Cfg.MqttEndpoint, ClientID, "", "")
-			Client = MQTT.NewClient(ClientOpts)
-			if TokenClient = Client.Connect(); TokenClient.Wait() && TokenClient.Error() != nil {
-				common.Failf("client.Connect() Error is %s", TokenClient.Error())
-			}
-			Expect(TokenClient.Error()).NotTo(HaveOccurred())
-			devicetopic := dtcommon.MemETPrefix + ctx.Cfg.NodeId + dtcommon.MemETUpdateSuffix
-			topic := dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
-			Client.Subscribe(devicetopic, 0, DeviceSubscribed)
-			Client.Subscribe(topic, 0, SubMessageReceived)
+			//ClientOpts = HubClientInit(ctx.Cfg.MqttEndpoint, ClientID, "", "")
+			//Client = MQTT.NewClient(ClientOpts)
+			//if TokenClient = Client.Connect(); TokenClient.Wait() && TokenClient.Error() != nil {
+			//	common.Failf("client.Connect() Error is %s", TokenClient.Error())
+			//}
+			//Expect(TokenClient.Error()).NotTo(HaveOccurred())
+			//devicetopic := dtcommon.MemETPrefix + ctx.Cfg.NodeId + dtcommon.MemETUpdateSuffix
+			//topic := dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
+			//Client.Subscribe(devicetopic, 0, DeviceSubscribed)
+			//Client.Subscribe(topic, 0, SubMessageReceived)
 		})
 		AfterEach(func() {
 			common.PrintTestcaseNameandStatus()
@@ -166,34 +167,106 @@ var _ = Describe("Event Bus Testing", func() {
 			Client.Disconnect(1)
 		})
 
-		It("TC_TEST_EBUS_6: change the device status to online from eventbus", func() {
-			var message DeviceUpdate
-			message.State = "online"
-			topic := dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
-			body, err := json.Marshal(message)
-			if err != nil {
-				common.Failf("Marshal failed %v", err)
-			}
-			Eventually(func() string {
-				var deviceEvent Device
-				for _, deviceEvent = range MemDeviceUpdate.AddDevices {
-					if strings.Compare(deviceEvent.ID, DeviceIDN) == 0 {
-						if TokenClient = Client.Publish(dtcommon.DeviceETPrefix+DeviceIDN+dtcommon.DeviceETStateUpdateSuffix, 0, false, body); TokenClient.Wait() && TokenClient.Error() != nil {
-							common.Failf("client.Publish() Error is %s", TokenClient.Error())
-						} else {
-							common.InfoV6("client.Publish Success !!")
+		FIt("TC_TEST_EBUS_6: change the device status to online from eventbus", func() {
+			for i := 0; i < 100; i++ {
+				ClientOpts = HubClientInit(ctx.Cfg.MqttEndpoint, ClientID, "", "")
+				Client = MQTT.NewClient(ClientOpts)
+
+				fmt.Printf("***********iteratio i %d **********", i)
+				DeviceIDN = GenerateDeviceID("kubeedge-device-")
+				DeviceN = CreateDevice(DeviceIDN, "edgedevice", "unknown")
+				//device added
+				IsDeviceAdded := HandleAddAndDeleteDevice(http.MethodPut, ctx.Cfg.TestManager+Devicehandler, DeviceN)
+				Expect(IsDeviceAdded).Should(BeTrue())
+
+				////connect
+				if TokenClient = Client.Connect(); TokenClient.Wait() && TokenClient.Error() != nil {
+					common.Failf("client.Connect() Error is %s", TokenClient.Error())
+				}
+				Expect(TokenClient.Error()).NotTo(HaveOccurred())
+				//subscribe
+				devicetopic := dtcommon.MemETPrefix + ctx.Cfg.NodeId + dtcommon.MemETUpdateSuffix
+				topic := dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
+				Client.Subscribe(devicetopic, 0, DeviceSubscribed)
+				Client.Subscribe(topic, 0, SubMessageReceived)
+				///////////////////////////
+
+				var message DeviceUpdate
+				message.State = "online"
+				topic = dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
+				body, err := json.Marshal(message)
+				if err != nil {
+					common.Failf("Marshal failed %v", err)
+				}
+				Eventually(func() string {
+					var deviceEvent Device
+					for _, deviceEvent = range MemDeviceUpdate.AddDevices {
+						//publish
+						if strings.Compare(deviceEvent.ID, DeviceIDN) == 0 {
+							if TokenClient = Client.Publish(dtcommon.DeviceETPrefix+DeviceIDN+dtcommon.DeviceETStateUpdateSuffix, 0, false, body); TokenClient.Wait() && TokenClient.Error() != nil {
+								common.Failf("client.Publish() Error is %s", TokenClient.Error())
+							} else {
+								common.InfoV6("client.Publish Success !!")
+							}
 						}
 					}
-				}
-				return deviceEvent.ID
-			}, "10s", "2s").Should(Equal(DeviceIDN), "Device state is not online within specified time")
-			Expect(TokenClient.Error()).NotTo(HaveOccurred())
-			Eventually(func() string {
-				common.InfoV2("subscribed to the topic %v", topic)
-				return DeviceState
-			}, "10s", "2s").Should(Equal("online"), "Device state is not online within specified time")
-			Client.Disconnect(1)
+					return deviceEvent.ID
+				}, "10s", "2s").Should(Equal(DeviceIDN), "Device state is not online within specified time")
+				Expect(TokenClient.Error()).NotTo(HaveOccurred())
+				Eventually(func() string {
+					common.InfoV2("subscribed to the topic %v", topic)
+					return DeviceState
+				}, "10s", "2s").Should(Equal("online"), "Device state is not online within specified time")
+				//disconnect
+				Client.Disconnect(1)
+			}
 		})
+
+		FIt("TC_TEST_EBUS_7: connect and disconnect 2000 times", func() {
+			for i := 0; i < 2000; i++ {
+				ClientOpts = HubClientInit(ctx.Cfg.MqttEndpoint, ClientID, "", "")
+				Client = MQTT.NewClient(ClientOpts)
+
+
+				////connect
+				if TokenClient = Client.Connect(); TokenClient.Wait() && TokenClient.Error() != nil {
+					common.Failf("client.Connect() Error is %s", TokenClient.Error())
+				}
+				Expect(TokenClient.Error()).NotTo(HaveOccurred())
+				//disconnect
+
+				Client.Disconnect(1)
+			}
+		})
+
+		//It("TC_TEST_EBUS_6: change the device status to online from eventbus", func() {
+		//	var message DeviceUpdate
+		//	message.State = "online"
+		//	topic := dtcommon.DeviceETPrefix + DeviceIDN + dtcommon.DeviceETStateUpdateSuffix + "/result"
+		//	body, err := json.Marshal(message)
+		//	if err != nil {
+		//		common.Failf("Marshal failed %v", err)
+		//	}
+		//	Eventually(func() string {
+		//		var deviceEvent Device
+		//		for _, deviceEvent = range MemDeviceUpdate.AddDevices {
+		//			if strings.Compare(deviceEvent.ID, DeviceIDN) == 0 {
+		//				if TokenClient = Client.Publish(dtcommon.DeviceETPrefix+DeviceIDN+dtcommon.DeviceETStateUpdateSuffix, 0, false, body); TokenClient.Wait() && TokenClient.Error() != nil {
+		//					common.Failf("client.Publish() Error is %s", TokenClient.Error())
+		//				} else {
+		//					common.InfoV6("client.Publish Success !!")
+		//				}
+		//			}
+		//		}
+		//		return deviceEvent.ID
+		//	}, "10s", "2s").Should(Equal(DeviceIDN), "Device state is not online within specified time")
+		//	Expect(TokenClient.Error()).NotTo(HaveOccurred())
+		//	Eventually(func() string {
+		//		common.InfoV2("subscribed to the topic %v", topic)
+		//		return DeviceState
+		//	}, "10s", "2s").Should(Equal("online"), "Device state is not online within specified time")
+		//	Client.Disconnect(1)
+		//})
 
 		It("TC_TEST_EBUS_7: change the device status to unknown from eventbus", func() {
 			var message DeviceUpdate
