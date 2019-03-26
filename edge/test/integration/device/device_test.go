@@ -186,12 +186,12 @@ var _ = Describe("Event Bus Testing", func() {
 					}
 				}
 				return deviceEvent.ID
-			}, "60s", "2s").Should(Equal(DeviceIDN), "Device state is not online within specified time")
+			}, "10s", "2s").Should(Equal(DeviceIDN), "Device state is not online within specified time")
 			Expect(TokenClient.Error()).NotTo(HaveOccurred())
 			Eventually(func() string {
 				common.InfoV2("subscribed to the topic %v", topic)
 				return DeviceState
-			}, "60s", "2s").Should(Equal("online"), "Device state is not online within specified time")
+			}, "10s", "2s").Should(Equal("online"), "Device state is not online within specified time")
 			Client.Disconnect(1)
 		})
 
