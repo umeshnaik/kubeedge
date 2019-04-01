@@ -55,7 +55,7 @@ var _ = Describe("Application deployment in edge_core Testing", func() {
 			utils.PrintTestcaseNameandStatus()
 		})
 
-		FIt("E2E_APP_DEPLOYMENT_1: Test application deployment in edge_core", func() {
+		It("E2E_APP_DEPLOYMENT_1: Test application deployment in edge_core", func() {
 			var deploymentList v1.DeploymentList
 			var podlist metav1.PodList
 			replica := 1
@@ -75,6 +75,32 @@ var _ = Describe("Application deployment in edge_core Testing", func() {
 				}
 			}
 			utils.CheckPodRunningState(ctx.Cfg.ApiServer+AppHandler, podlist)
+		})
+		Context("Test application deployment and delete deployment", func() {
+			BeforeEach(func() {
+			})
+			AfterEach(func() {
+				var podlist metav1.PodList
+				podlist, err := utils.GetPods(ctx.Cfg.ApiServer+AppHandler, "")
+				Expect(err).To(BeNil())
+				for _, pod := range podlist.Items {
+					_, StatusCode := utils.DeletePods(ctx.Cfg.ApiServer+AppHandler+"/"+pod.Name)
+					Expect(StatusCode).Should(Equal(http.StatusOK))
+				}
+				utils.CheckPodDeleteState(ctx.Cfg.ApiServer+AppHandler, podlist)
+				utils.PrintTestcaseNameandStatus()
+			})
+
+			FIt("E2E_POD_DEPLOYMENT_1: Test application deployment in edge_core", func() {
+				var podlist metav1.PodList
+				//Generate the random string and assign as a UID
+				UID = "pod-app-" + utils.GetRandomString(5)
+				IsAppDeployed := utils.HandlePod(http.MethodPost, ctx.Cfg.ApiServer+AppHandler, UID, ctx.Cfg.AppImageUrl[0])
+				Expect(IsAppDeployed).Should(BeTrue())
+				podlist, err := utils.GetPods(ctx.Cfg.ApiServer+AppHandler, "")
+				Expect(err).To(BeNil())
+				utils.CheckPodRunningState(ctx.Cfg.ApiServer+AppHandler, podlist)
+			})
 		})
 	})
 })

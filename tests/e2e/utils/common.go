@@ -66,6 +66,60 @@ func GenerateDeploymentBody(deploymentName, image string, port, replica int) (er
 	return nil, temp
 }
 
+//fucntion to generate Pod body
+func GeneratePodBody(podName, image string) (error, map[string]interface{}) {
+	var temp map[string]interface{}
+
+	//containerName := "app-" + utils.GetRandomString(5)
+	Body := fmt.Sprintf(`{"apiVersion": "v1","kind": "Pod","metadata": {"name": "%s","labels": {"app": "nginx"}},
+				"spec": {"containers": [{"name": "nginx","image": "%s","ports": [{"containerPort": 80, "hostPort": 80}]}]}}`, podName, image)
+	err := json.Unmarshal([]byte(Body), &temp)
+	if err != nil {
+		Failf("Unmarshal body failed: %v", err)
+		return err, temp
+	}
+
+	return nil, temp
+}
+
+//Function to handle app deployment/delete deployment.
+func HandlePod(operation string, apiserver string, UID string, ImageUrl string) bool {
+	var req *http.Request
+	var err error
+	var body io.Reader
+
+	client := &http.Client{}
+	switch operation {
+	case "POST":
+		err, body := GeneratePodBody(UID, ImageUrl)
+		if err != nil {
+			Failf("GenerateDeploymentBody marshalling failed: %v", err)
+		}
+		respbytes, err := json.Marshal(body)
+		if err != nil {
+			Failf("Marshalling body failed: %v", err)
+		}
+		req, err = http.NewRequest(http.MethodPost, apiserver, bytes.NewBuffer(respbytes))
+	case "DELETE":
+		req, err = http.NewRequest(http.MethodDelete, apiserver+UID, body)
+	}
+	if err != nil {
+		// handle error
+		Failf("Frame HTTP request failed: %v", err)
+		return false
+	}
+	req.Header.Set("Content-Type", "application/json")
+	t := time.Now()
+	resp, err := client.Do(req)
+	if err != nil {
+		// handle error
+		Failf("HTTP request is failed :%v", err)
+		return false
+	}
+	InfoV6("%s %s %v in %v", req.Method, req.URL, resp.Status, time.Now().Sub(t))
+	return true
+}
+
 //Function to handle app deployment/delete deployment.
 func HandleDeployment(operation string, apiserver string, UID string, ImageUrl string, replica int) bool {
 	var req *http.Request
@@ -96,12 +150,12 @@ func HandleDeployment(operation string, apiserver string, UID string, ImageUrl s
 	req.Header.Set("Content-Type", "application/json")
 	t := time.Now()
 	resp, err := client.Do(req)
-	InfoV6("%s %s %v in %v", req.Method, req.URL, resp.Status, time.Now().Sub(t))
 	if err != nil {
 		// handle error
 		Failf("HTTP request is failed :%v", err)
 		return false
 	}
+	InfoV6("%s %s %v in %v", req.Method, req.URL, resp.Status, time.Now().Sub(t))
 	return true
 }
 
